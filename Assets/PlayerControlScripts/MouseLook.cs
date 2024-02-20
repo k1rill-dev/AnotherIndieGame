@@ -9,20 +9,20 @@ namespace PlayerControlScripts
         private Vector2 _mouseLook;
         private float _xRotation = 0f;
         [SerializeField] private Transform _playerBody;
-
+        
+        
         private void Awake()
         {
             _playerInput = new PlayerInput();
             _playerBody = transform.parent;
-
+            
             // Cursor.lockState = CursorLockMode.Locked;
         }
-
+        
         private void Update()
         {
             Look();
         }
-
         private void Look()
         {
             _mouseLook = _playerInput.Player.Look.ReadValue<Vector2>();

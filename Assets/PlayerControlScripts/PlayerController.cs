@@ -11,27 +11,49 @@ namespace PlayerControlScripts
         private float _gravity = -9.81f;
         private Vector2 _move;
         private CharacterController _characterController;
-
+        private Flashlight _flashlight;
+        private bool _isGrounded;
+        private bool _isActive;
+        
         [SerializeField]private Transform _ground;
         [SerializeField]private float _distanceToGround = 0.4f;
         [SerializeField]private LayerMask _groundMask;
-        private Flashlight _flashlight;
+        [SerializeField] private float _activateDistance = 3f;
         [SerializeField] private GameObject _flashLightObject;
-        private bool _isGrounded;
-
+        [SerializeField] private int _noteCount = 0;
+        
+        
 
         private void Awake()
         {
             _playerInput = new PlayerInput();
             _characterController = GetComponent<CharacterController>();
             _flashlight = new Flashlight();
+            // Interacter _interacter = new Interacter();
+            _playerInput.Player.Interact.performed += ctx => PickUp();
             _playerInput.Player.Flashlight.performed += ctx => _flashlight.turnOnFlashlight(_flashLightObject);
+            
         }
 
         private void Update()
         {
             Grav();
             PlayerMovement();
+        }
+        
+        public void PickUp()
+        {
+            RaycastHit hit;
+            _isActive = Physics.Raycast(Camera.main.transform.position, Camera.main.transform.TransformDirection(Vector3.forward), out hit, _activateDistance);
+            if (hit.transform.CompareTag("Note"))
+            {
+                _noteCount += 1;
+                hit.transform.gameObject.SetActive(false);
+                if (_noteCount == 8)
+                {
+                    Debug.Log("игра окончена");
+                }
+            }
         }
 
         private void Grav()
