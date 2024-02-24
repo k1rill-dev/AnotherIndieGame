@@ -1,3 +1,4 @@
+using System;
 using GameLogicScripts;
 using UnityEngine;
 
@@ -14,6 +15,7 @@ namespace PlayerControlScripts
         private Flashlight _flashlight;
         private bool _isGrounded;
         private bool _isActive;
+        // private static event Action<> 
         
         [SerializeField]private Transform _ground;
         [SerializeField]private float _distanceToGround = 0.4f;
@@ -21,18 +23,18 @@ namespace PlayerControlScripts
         [SerializeField] private float _activateDistance = 3f;
         [SerializeField] private GameObject _flashLightObject;
         [SerializeField] private int _noteCount = 0;
-        
+        private static event Action _allNotesCollected; 
         
 
         private void Awake()
         {
+            _allNotesCollected += OnAllNoteCollected;
             _playerInput = new PlayerInput();
             _characterController = GetComponent<CharacterController>();
             _flashlight = new Flashlight();
             // Interacter _interacter = new Interacter();
             _playerInput.Player.Interact.performed += ctx => PickUp();
             _playerInput.Player.Flashlight.performed += ctx => _flashlight.turnOnFlashlight(_flashLightObject);
-            
         }
 
         private void Update()
@@ -41,7 +43,7 @@ namespace PlayerControlScripts
             PlayerMovement();
         }
         
-        public void PickUp()
+        private void PickUp()
         {
             RaycastHit hit;
             _isActive = Physics.Raycast(Camera.main.transform.position, Camera.main.transform.TransformDirection(Vector3.forward), out hit, _activateDistance);
@@ -49,11 +51,16 @@ namespace PlayerControlScripts
             {
                 _noteCount += 1;
                 hit.transform.gameObject.SetActive(false);
-                if (_noteCount == 8)
+                if (_noteCount == 3)
                 {
-                    Debug.Log("игра окончена");
+                    _allNotesCollected?.Invoke();
                 }
             }
+        }
+
+        private void OnAllNoteCollected()
+        {
+            Debug.Log("все записки собраны");
         }
 
         private void Grav()

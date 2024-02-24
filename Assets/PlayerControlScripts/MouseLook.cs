@@ -15,8 +15,7 @@ namespace PlayerControlScripts
         {
             _playerInput = new PlayerInput();
             _playerBody = transform.parent;
-            
-            // Cursor.lockState = CursorLockMode.Locked;
+            Cursor.lockState = CursorLockMode.Locked;
         }
         
         private void Update()
