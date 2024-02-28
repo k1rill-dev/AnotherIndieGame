@@ -1,14 +1,13 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class MonsterAI : MonoBehaviour
 {
     private NavMeshAgent _agent;
+    private Animator _animator;
     [SerializeField] private float _sprintRatio = 1.25f;
     [SerializeField] private float _range;
     [SerializeField] private Transform _centrePoint;
@@ -22,8 +21,8 @@ public class MonsterAI : MonoBehaviour
 
     [SerializeField]private bool _canSeePlayer;
 
-    private static event Action _seePlayer;
-    private static event Action _death; 
+    private static event Action SeePlayer;
+    private static event Action Death; 
     public float Radius
     {
         get => _radius;
@@ -48,18 +47,20 @@ public class MonsterAI : MonoBehaviour
         set => _canSeePlayer = value;
     }
 
-    void Start()
+    private void Start()
     {
-        _seePlayer += OnSeePlayer;
-        _death += OnDeath;
+        SeePlayer += OnSeePlayer;
+        Death += OnDeath;
         _agent = GetComponent<NavMeshAgent>();
+        _animator = GetComponent<Animator>();
     }
 
     
-    void Update()
+    private void Update()
     {
         if (!_canSeePlayer)
         {
+            
             StartCoroutine(IdleRoutine());
             StartCoroutine(FOVRoutine());
             
@@ -68,7 +69,7 @@ public class MonsterAI : MonoBehaviour
         {
             StopCoroutine(IdleRoutine());
             StopCoroutine(FOVRoutine());
-            _seePlayer?.Invoke();
+            SeePlayer?.Invoke();
         }
     }
 
@@ -77,18 +78,30 @@ public class MonsterAI : MonoBehaviour
         float distance = Vector3.Distance(transform.position ,_playerRef.transform.position);
         if (distance > _agent.stoppingDistance)
         {
-            _agent.speed *= _sprintRatio;
+            // _agent.speed *= _sprintRatio;
             _agent.SetDestination(_playerRef.transform.position);
         }
         else
         {
-            _death?.Invoke();
+            _animator.SetBool("isIdle", false);
+            _animator.SetBool("isWalking", false);
+            _animator.SetTrigger("Attack");
+            if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 1)
+            {
+                Death?.Invoke();
+            }
         }
     }
 
     private void OnDeath()
     {
+        _animator.ResetTrigger("Attack");
+        _animator.SetBool("isIdle", false);
+        _animator.SetBool("isWalking", false);
         Debug.Log("ты умер лох");
+        // Application.Quit();
+        
+        
     }
     
     private bool RandomPoint(Vector3 center, float range, out Vector3 result)
@@ -111,13 +124,21 @@ public class MonsterAI : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(2f);
+            if (_agent.isStopped)
+            {
+                _animator.SetBool("isIdle", true);
+                _animator.SetBool("isWalking", false);
+            }
+            // _animator.SetBool("isAttack", false);
             _agent.speed = 3.5f;
             if(_agent.remainingDistance <= _agent.stoppingDistance) 
             {
                 Vector3 point;
                 if (RandomPoint(_centrePoint.position, _range, out point)) 
                 {
-                    Debug.DrawRay(point, Vector3.up, Color.blue, 1.0f); 
+                    Debug.DrawRay(point, Vector3.up, Color.blue, 1.0f);
+                    _animator.SetBool("isIdle", false);
+                    _animator.SetBool("isWalking", true);
                     _agent.SetDestination(point);
                 }
             }
